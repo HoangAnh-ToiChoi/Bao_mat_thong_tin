@@ -1,0 +1,19 @@
+# --- Python Ignore ---
+__pycache__/
+*.pyc
+venv/
+.env
+.DS_Store
+
+# --- Android Studio Ignore ---
+.gradle/
+local.properties
+.idea/
+.filters/
+build/
+*.iml
+*.hprof
+.cxx/
+captures/
+*.apk
+output.json
