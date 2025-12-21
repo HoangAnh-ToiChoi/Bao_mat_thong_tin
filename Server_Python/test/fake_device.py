@@ -30,14 +30,14 @@ def chay_gia_lap():
                 'battery': f"{random.randint(20, 100)}%"
             }
             sio.emit('gui_toa_do', goi_gps)
-            print(f"ĐÃ GỬI GPS: {goi_gps[lat]}, {goi_gps[long]}")
+            print(f"ĐÃ GỬI GPS: {goi_gps['lat']}, {goi_gps['long']}")
 
             goi_tin_anh = {
                 'device.id': 'DT_Cua_HA',
                 'img': fake_img_data
             }
             sio.emit('gui_anh', goi_tin_anh)
-            print(f"ĐÃ GỬI ẢNH: {goi_tin_anh[img]}")
+            print(f"ĐÃ GỬI ẢNH: {goi_tin_anh['img']}")
             print("-" * 30)
             time.sleep(5)
     except Exception as e:
