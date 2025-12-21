@@ -1,0 +1,57 @@
+Sơ đồ luồng dữ liệu bạn phải xử lý
+Hãy hình dung luồng chạy như sau để dễ code:
+
+Điện thoại (Client) ---> Gửi dữ liệu (GPS, Ảnh) ---> Server (Bạn).
+
+Server (Bạn) ---> Xử lý & Lưu vào Database.
+
+Server (Bạn) ---> Hiển thị lên Web cho người dùng xem.
+
+Web Admin ---> Bấm nút "Chụp" ---> Server (Bạn) ---> Gửi lệnh xuống Điện thoại.
+
+CÔNG VIỆC CỤ THỂ (To-Do List)
+1. Xây dựng kênh giao tiếp thời gian thực (Socket.IO)
+Đây là nhiệm vụ quan trọng nhất. Bạn phải viết code để Server "nghe" được các sự kiện từ điện thoại.
+
+Việc cần làm:
+
+Tạo sự kiện connect: Để biết khi nào nạn nhân online.
+
+Tạo sự kiện disconnect: Để biết khi nào nạn nhân mất mạng/tắt máy.
+
+Tạo sự kiện receive_location: Nhận cục JSON toạ độ {lat: ..., long: ...}.
+
+Tạo sự kiện receive_image: Nhận chuỗi ảnh (dạng text Base64) cực dài gửi về.
+
+2. Xử lý lưu trữ dữ liệu (Database - MongoDB)
+Dữ liệu gửi về cần được lưu lại để xem sau.
+
+Việc cần làm:
+
+Cài đặt MongoDB (hoặc dùng MongoDB Atlas trên cloud cho tiện).
+
+Viết hàm Python kết nối Database (pymongo).
+
+Khi nhận được toạ độ -> db.locations.insert_one(...).
+
+Khi nhận được log bàn phím/web -> db.logs.insert_one(...).
+
+3. Xử lý file ảnh (Image Processing)
+Điện thoại không gửi file .jpg trực tiếp, nó gửi một chuỗi mã hóa (Base64 string).
+
+Việc cần làm:
+
+Dùng thư viện base64 và Pillow trong Python.
+
+Viết hàm: Nhận chuỗi mã hóa -> Dịch ngược lại thành ảnh -> Lưu vào thư mục static/uploads/anh_so_1.jpg.
+
+4. Làm giao diện điều khiển (Dashboard)
+Bạn cần làm một trang web đơn giản để hiển thị thông tin.
+
+Việc cần làm:
+
+Dùng HTML/CSS cơ bản + Jinja2 (của Flask).
+
+Tạo bảng hiển thị danh sách thiết bị đang online.
+
+Tạo nút bấm: "Chụp màn hình ngay". Khi bấm nút này, code Python sẽ gửi lệnh emit('capture_command') xuống điện thoại.
